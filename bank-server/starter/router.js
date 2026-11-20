@@ -13,7 +13,11 @@ const routes = [
   { method: "GET", path: "/accounts", handler: pages.accountList },
   { method: "GET", path: "/accounts/:id", handler: pages.accountDetail },
   { method: "POST", path: "/accounts/:id/deposit", handler: pages.depositForm },
-  { method: "POST", path: "/accounts/:id/withdraw", handler: pages.withdrawForm },
+  {
+    method: "POST",
+    path: "/accounts/:id/withdraw",
+    handler: pages.withdrawForm,
+  },
 
   // JSON API
   { method: "GET", path: "/api/accounts", handler: api.listAccounts },
@@ -22,7 +26,11 @@ const routes = [
   { method: "DELETE", path: "/api/accounts/:id", handler: api.closeAccount },
   { method: "POST", path: "/api/accounts/:id/deposit", handler: api.deposit },
   { method: "POST", path: "/api/accounts/:id/withdraw", handler: api.withdraw },
-  { method: "GET", path: "/api/accounts/:id/transactions", handler: api.listTransactions },
+  {
+    method: "GET",
+    path: "/api/accounts/:id/transactions",
+    handler: api.listTransactions,
+  },
   { method: "POST", path: "/api/transfers", handler: api.transfer },
 ];
 
@@ -34,13 +42,43 @@ const routes = [
 //   matchPath("/accounts/:id", "/accounts/7/x")  -> null    (different number of segments)
 // Hint: "/accounts/7".split("/") -> ["", "accounts", "7"]
 export function matchPath(pattern, path) {
-  todo("matchPath in router.js");
+  // console.log("Pattern: ", pattern);
+  // console.log("Path: ", path);
+
+  const patternParts = pattern.split("/");
+  const pathParts = path.split("/");
+
+  // console.log("Pattern-part: ", patternParts);
+  // console.log("Path-part: ", pathParts);
+
+  // different number of segments means no match
+  if (patternParts.length !== pathParts.length) return null;
+
+  const params = {};
+
+  for (let i = 0; i < patternParts.length; i++) {
+    if (patternParts[i].startsWith(":")) {
+      try {
+        // ":id" -> key "id", value is the real segment
+        params[patternParts[i].slice(1)] = decodeURIComponent(pathParts[i]);
+      } catch (error) {
+        // broken % sequence in the url, so no match
+        return null;
+      }
+    } else if (patternParts[i] !== pathParts[i]) {
+      return null;
+    }
+  }
+
+  return params;
 }
 
 // TODO (Part 1): "/api/accounts/" and "/api/accounts" should be the same route.
 // Remove trailing slashes, but "/" must stay "/".
 export function normalizePath(pathname) {
-  return pathname;
+  const cleaned = pathname.replace(/\/+$/, "");
+  // "/" becomes "" after removing slashes, so put it back
+  return cleaned === "" ? "/" : cleaned;
 }
 
 export async function handleRequest(req, res) {
@@ -48,14 +86,23 @@ export async function handleRequest(req, res) {
   // new URL() needs a full URL to parse it, so we give it a dummy base.
   const url = new URL(req.url, "http://localhost");
   const path = normalizePath(url.pathname);
+  const allowedMethods = [];
 
   for (const route of routes) {
     const params = matchPath(route.path, path);
     if (params && route.method === req.method) {
       return route.handler(req, res, { params, query: url.searchParams });
     }
+    // path matched but the method did not, so remember this method
+    if (params) {
+      allowedMethods.push(route.method);
+    }
   }
 
+  if (allowedMethods.length > 0) {
+    res.setHeader("Allow", allowedMethods.join(", "));
+    throw new HttpError(405, `Method not found: ${req.method}`);
+  }
   // TODO (Part 1): if the PATH matched some route but the METHOD didn't
   // (e.g. PUT /api/accounts), respond 405 instead of 404, and set an
   // `Allow` header listing the methods that DO work, e.g. "GET, POST".

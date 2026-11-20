@@ -6,6 +6,7 @@
   --line: #dcdcd6;
   --card: #ffffff;
 }
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #171716;
@@ -16,13 +17,18 @@
     --card: #20201e;
   }
 }
-* { box-sizing: border-box; }
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font: 16px/1.5 system-ui, sans-serif;
   background: var(--bg);
   color: var(--fg);
 }
+
 header {
   display: flex;
   justify-content: space-between;
@@ -31,16 +37,78 @@ header {
   border-bottom: 1px solid var(--line);
   background: var(--card);
 }
-header nav a { margin-left: 16px; }
-.brand { font-weight: 700; color: var(--fg); text-decoration: none; }
-a { color: var(--accent); }
-main { max-width: 760px; margin: 0 auto; padding: 24px 16px; }
-table { width: 100%; border-collapse: collapse; background: var(--card); }
-th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
-th { color: var(--muted); font-weight: 600; font-size: 14px; }
-.num { text-align: right; font-variant-numeric: tabular-nums; }
-.balance { font-size: 20px; }
-.forms { display: flex; flex-wrap: wrap; gap: 16px; margin: 16px 0 24px; }
-form { display: flex; gap: 8px; align-items: end; }
-input { padding: 6px 8px; width: 140px; }
-button { padding: 7px 14px; background: var(--accent); color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+
+header nav a {
+  margin-left: 16px;
+}
+
+.brand {
+  font-weight: 700;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+a {
+  color: var(--accent);
+}
+
+main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+}
+
+th,
+td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.balance {
+  font-size: 20px;
+}
+
+.forms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 16px 0 24px;
+}
+
+form {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+}
+
+input {
+  padding: 6px 8px;
+  width: 140px;
+}
+
+button {
+  padding: 7px 14px;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}

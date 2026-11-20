@@ -28,7 +28,8 @@ function record(accountId, type, amount, balanceAfter, extra = {}) {
 
 // TODO (Part 1): when minBalance is given, return only accounts with balance >= minBalance.
 export function listAccounts({ minBalance } = {}) {
-  return accounts;
+  if (minBalance === undefined) return accounts;
+  return accounts.filter((a) => a.balance >= minBalance);
 }
 
 // ✅ Given
@@ -63,7 +64,13 @@ export function deposit(id, amount) {
 //  - throw HttpError 409 "Insufficient funds" if amount > balance
 //  - record a "withdrawal" transaction
 export function withdraw(id, amount) {
-  todo("withdraw");
+  const account = findAccount(id);
+  if (amount > account.balance) {
+    throw new HttpError(409, "Insufficient funds");
+  }
+  account.balance -= amount;
+  record(id, "withdrawal", amount, account.balance);
+  return account;
 }
 
 // TODO (Part 3): move `amount` from one account to another.
@@ -74,17 +81,45 @@ export function withdraw(id, amount) {
 //    each with { counterpartyId } pointing at the other account
 //  - return { from, to, amount }
 export function transfer(fromId, toId, amount) {
-  todo("transfer");
+  if (fromId === toId) {
+    throw new HttpError(400, "Cannot transfer to the same account");
+  }
+
+  // look up both accounts first (throws 404 if either is missing)
+  const from = findAccount(fromId);
+  const to = findAccount(toId);
+
+  if (amount > from.balance) {
+    throw new HttpError(409, "Insufficient funds");
+  }
+
+  // all checks passed, now move the money
+  from.balance -= amount;
+  to.balance += amount;
+  record(fromId, "transfer_out", amount, from.balance, {
+    counterpartyId: toId,
+  });
+  record(toId, "transfer_in", amount, to.balance, {
+    counterpartyId: fromId,
+  });
+
+  return { from, to, amount };
 }
 
 // TODO (Part 3): remove the account. Only allowed when its balance is exactly 0 (otherwise 409).
 export function closeAccount(id) {
-  todo("closeAccount");
+  const account = findAccount(id);
+  if (account.balance !== 0) {
+    throw new HttpError(409, "Balance must be 0 to close an account");
+  }
+  accounts.splice(accounts.indexOf(account), 1);
 }
 
 // TODO (Part 3): all transactions for one account, oldest first. 404 if the account doesn't exist.
 export function listTransactions(accountId) {
-  todo("listTransactions");
+  // findAccount throws a 404 if the account does not exist
+  findAccount(accountId);
+  return transactions.filter((t) => t.accountId === accountId);
 }
 
 // Seed data so there is something to look at on first run. Don't change it:

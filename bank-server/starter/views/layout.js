@@ -9,7 +9,13 @@
 // with:                        &amp;  &lt;  &gt;  &quot;  &#39;
 // (Do & FIRST. Why? Try it in the other order and see.)
 export function escapeHtml(value) {
-  return String(value);
+  // & must be replaced first, or the & in &lt; etc. would be replaced again
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 // ✅ Given: 150000 cents -> "1,500.00"

@@ -29,7 +29,32 @@ export function home(req, res) {
 // Hint: build the rows with accounts.map(a => `<tr>...</tr>`).join("")
 // ⚠️ Always wrap user data in escapeHtml(...).
 export function accountList(req, res) {
-  todo("GET /accounts");
+  const accounts = store.listAccounts();
+
+  const rows = accounts
+    .map(
+      (a) => `<tr>
+          <td>${a.id}</td>
+          <td><a href="/accounts/${a.id}">${escapeHtml(a.owner)}</a></td>
+          <td class="num">${formatMoney(a.balance)}</td>
+        </tr>`,
+    )
+    .join("");
+
+  sendHtml(
+    res,
+    200,
+    layout(
+      "Accounts",
+      `<h1>Accounts</h1>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Owner</th><th class="num">Balance</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`,
+    ),
+  );
 }
 
 // TODO (Part 4): GET /accounts/:id
@@ -38,19 +63,78 @@ export function accountList(req, res) {
 // Bonus: add two <form method="POST"> elements that post `amount` to
 //        /accounts/<id>/deposit and /accounts/<id>/withdraw
 export function accountDetail(req, res, { params }) {
-  todo("GET /accounts/:id");
+  const id = parseId(params.id);
+  // findAccount throws a 404 for an unknown id
+  const account = store.findAccount(id);
+  const transactions = store.listTransactions(id);
+
+  const rows = transactions
+    .map(
+      (t) => `<tr>
+          <td>${t.id}</td>
+          <td>${escapeHtml(t.type)}</td>
+          <td class="num">${formatMoney(t.amount)}</td>
+          <td class="num">${formatMoney(t.balanceAfter)}</td>
+          <td>${escapeHtml(t.createdAt)}</td>
+        </tr>`,
+    )
+    .join("");
+
+  // layout() already escapes the title
+  sendHtml(
+    res,
+    200,
+    layout(
+      account.owner,
+      `<h1>${escapeHtml(account.owner)}</h1>
+      <p class="balance">Balance: <strong>${formatMoney(account.balance)}</strong></p>
+
+      <div class="forms">
+        <form method="POST" action="/accounts/${id}/deposit">
+          <label>Deposit (cents)
+            <input type="number" name="amount" min="1" required />
+          </label>
+          <button type="submit">Deposit</button>
+        </form>
+        <form method="POST" action="/accounts/${id}/withdraw">
+          <label>Withdraw (cents)
+            <input type="number" name="amount" min="1" required />
+          </label>
+          <button type="submit">Withdraw</button>
+        </form>
+      </div>
+
+      <h2>Transactions</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Type</th>
+            <th class="num">Amount</th><th class="num">Balance after</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`,
+    ),
+  );
 }
 
 // TODO (Bonus): POST /accounts/:id/deposit  (from an HTML form)
 // Read the form body, deposit, then redirect(res, `/accounts/${id}`).
 // Why redirect? Look up the "Post/Redirect/Get" pattern, then try refreshing the page without it.
 export async function depositForm(req, res, { params }) {
-  todo("POST /accounts/:id/deposit");
+  const id = parseId(params.id);
+  const form = await readFormBody(req);
+  store.deposit(id, parseAmount(form.amount));
+  redirect(res, `/accounts/${id}`);
 }
 
 // TODO (Bonus): POST /accounts/:id/withdraw  (from an HTML form)
 export async function withdrawForm(req, res, { params }) {
-  todo("POST /accounts/:id/withdraw");
+  const id = parseId(params.id);
+  const form = await readFormBody(req);
+  store.withdraw(id, parseAmount(form.amount));
+  redirect(res, `/accounts/${id}`);
 }
 
 // TODO (Part 4): GET /styles.css
@@ -58,5 +142,10 @@ export async function withdrawForm(req, res, { params }) {
 // Hint: new URL("../public/styles.css", import.meta.url) gives the file's location
 // no matter which folder you started node from.
 export async function styles(req, res) {
-  todo("GET /styles.css");
+  const css = await readFile(new URL("../public/styles.css", import.meta.url));
+  res.writeHead(200, {
+    "Content-Type": "text/css; charset=utf-8",
+    "Content-Length": css.length,
+  });
+  res.end(css);
 }
